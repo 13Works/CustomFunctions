@@ -83,7 +83,7 @@ function Table.match(a: table, b: table, strict: boolean): boolean
 			return false
 		end
 	end
-	
+
 	for i, v in b do
 		if a[i] == nil then
 			if not strict and v == false then continue end
@@ -92,7 +92,7 @@ function Table.match(a: table, b: table, strict: boolean): boolean
 			return false
 		end
 	end
-	
+
 	return true
 end
 
@@ -118,9 +118,13 @@ function Table.print(haystack: table, index: string): string?
 		for i, v in pairs(tbl) do
 			if typeof(v) == "table" then
 				i = typeof(i) == "string" and "\"".. i .. "\"" or tostring(i)
-				table.insert(Output, Depth .. "[" .. i .. "] = {")
-				IncreaseDepth(v, Depth .. Indent)
-				table.insert(Output, Depth .. "};")
+				if next(v) ~= nil then
+					table.insert(Output, Depth .. "[" .. i .. "] = {")
+					IncreaseDepth(v, Depth .. Indent)
+					table.insert(Output, Depth .. "};")
+				else
+					table.insert(Output, Depth .. "[" .. i .. "] = {};")
+				end
 			else
 				i = typeof(i) == "string" and "\"".. i .. "\"" or tostring(i)
 				v = typeof(v) == "string" and "\"".. v .. "\"" or tostring(v)
@@ -131,14 +135,22 @@ function Table.print(haystack: table, index: string): string?
 		task.wait()
 	end
 
+	index = "[\"" .. (index ~= nil and tostring(index) or "Table") .. "\"] = {"
+
+	
 	if next(haystack) ~= nil then
-		table.insert(Output, "[\"" .. (index ~= nil and tostring(index) or "Table") .. "\"] = {")
 		IncreaseDepth(haystack)
+		table.insert(Output, "}")
+	else
+		index = index .. "}"
 	end
+	
+	table.insert(Output, 2, index)
+	Output = table.concat(Output, "\n")
+	
+	print(Output)
 
-	table.insert(Output, "}")
-
-	return table.concat(Output, "\n")
+	return Output
 end
 
 function Table.filter(__array: Array, condition: ((any)->boolean)?): Array
@@ -149,7 +161,7 @@ function Table.filter(__array: Array, condition: ((any)->boolean)?): Array
 			table.insert(filteredArray, value)
 		end
 	end
-	
+
 	return filteredArray
 end
 
@@ -217,6 +229,107 @@ function Table.unique(__array: Array): Array
 	end
 
 	return uniqueValues
+end
+
+function Table.chunk(__array: Array, size: number)
+	local result = {}
+	for i = 1, #__array, size do
+		local chunk = {}
+		for j = i, math.min(i + size - 1, #__array) do
+			table.insert(chunk, __array[j])
+		end
+		table.insert(result, chunk)
+	end
+	return result
+end
+
+function Table.group_by(__array: Array, extract: (any) -> (any, any...))
+	local groups = {}
+	for _, value in ipairs(__array) do
+		local key = extract(value)
+		if not groups[key] then
+			groups[key] = {}
+		end
+		table.insert(groups[key], value)
+	end
+	return groups
+end
+
+function Table.random(__array: Array, count: number)
+	local result = {}
+	local indices = {}
+	for i = 1, math.min(count, #__array) do
+		local index = math.random(1, #__array)
+		while indices[index] do
+			index = math.random(1, #__array)
+		end
+		table.insert(result, __array[index])
+		indices[index] = true
+	end
+	return result
+end
+
+function Table.splice(__array: Array, start: number, deleteCount: number, ...: any)
+	local removed = {}
+	local args = {...}
+	for i = start, start + deleteCount - 1 do
+		table.insert(removed, __array[i])
+		table.remove(__array, i)
+	end
+	for i = 1, #args do
+		table.insert(__array, start + i - 1, args[i])
+	end
+	return removed
+end
+
+function Table.fill(__array: Array, value: any, start: number, finish: number): Array
+	for i = start, finish do
+		__array[i] = value
+	end
+	return __array
+end
+
+function Table.occurrences(__array: Array): table
+	local freqTable = {}
+	for _, value in ipairs(__array) do
+		freqTable[value] = (freqTable[value] or 0) + 1
+	end
+	return freqTable
+end
+
+function Table.map(__array: Array, mapping: (any) -> any)
+	local result = {}
+	for _, value in ipairs(__array) do
+		table.insert(result, mapping(value))
+	end
+	return result
+end
+
+function Table.flatten(__table: table)
+	local result = {}
+	local function flattenRecursively(tbl)
+		for _, value in ipairs(tbl) do
+			if type(value) == "table" then
+				flattenRecursively(value)
+			else
+				table.insert(result, value)
+			end
+		end
+	end
+	flattenRecursively(__table)
+	return result
+end
+
+function Table.partition(__array: Array, predicate: (any) -> (any, any...))
+	local trueGroup, falseGroup = {}, {}
+	for _, value in ipairs(__array) do
+		if predicate(value) then
+			table.insert(trueGroup, value)
+		else
+			table.insert(falseGroup, value)
+		end
+	end
+	return trueGroup, falseGroup
 end
 
 return Table

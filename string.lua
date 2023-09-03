@@ -119,9 +119,67 @@ function String.wrap(__string: string, maxLineLength: number): string
 	return table.concat(wrappedLines, "\n")
 end
 
-function String.countlines(__string: string): number
+function String.count_lines(__string: string): number
 	local _, lineCount = __string:gsub("\n", "\n")
 	return lineCount + 1
+end
+
+function String.lpadding(__string: string, length: number, padding: string): string
+	if #__string >= length then return __string end
+	return padding:rep(length - #__string) .. __string
+end
+
+function String.rpadding(__string: string, length: number, padding: string): string
+	if #__string >= length then return __string end
+	return __string .. padding:rep(length - #__string)
+end
+
+function String.padding(__string: string, length: number, padding: string): string
+	if #__string >= length then return __string end
+	return padding:rep(length - #__string) .. __string .. padding:rep(length - #__string) 
+end
+
+function String.truncate(__string: string, length: number, ellipsis: string): string
+	if #__string > length then
+		return __string:sub(1, length - #ellipsis) .. ellipsis
+	else
+		return __string
+	end
+end
+
+function String.replace(__string: string, search: string, replace: string): string
+	return __string:gsub(search, replace)
+end
+
+function String.random(length: number, characters: string)
+	if not characters then
+		characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+{}[]|;:,.<>?`~"
+	end
+
+	local result = ""
+
+	for _ = 1, length do
+		local randomIndex = math.random(#characters)
+		result = result .. characters:sub(randomIndex, randomIndex)
+	end
+
+	return result
+end
+
+function String.to_slug(__string: string): string
+	return __string:lower():gsub("[%s%W]+", "-")
+end
+
+function String.extract_numbers(__string: string): Array
+	local numbers = {}
+	for number in __string:gmatch("%d+") do
+		table.insert(numbers, tonumber(number))
+	end
+	return numbers
+end
+
+function String.remove_duplicates(__string: string): string
+	return __string:gsub("(.)%1+", "%1")
 end
 
 return String
